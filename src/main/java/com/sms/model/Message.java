@@ -1,26 +1,29 @@
 package com.sms.model;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
  * JPA Entity representing an SMS Message.
  * 
- * Extends PanacheEntity which provides:
- * - Auto-generated Long id field
- * - Built in CRUD operations
- * - Active Record pattern for simpler database operations
- * @see <a href="https://quarkus.io/guides/hibernate-orm-panache">Quarkus Panache Guide</a>
+ * This is a simple JPA entity (POJO). All database operations
+ * are handled through MessageRepository (Repository pattern).
  */
 @Entity
 @Table(name = "messages")
-public class Message extends PanacheEntity {
+public class Message {
     
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
     /**
      * The sender's phone number
      * Example: "+306912341524"
@@ -68,14 +71,14 @@ public class Message extends PanacheEntity {
     public LocalDateTime updatedAt;
 
     /**
-     * Default constractor required by JPA 
+     * Default constructor required by JPA 
      */
     public Message() {
     }
 
     /**
      * Creates a new message with PENDING status.
-     * Automatically sets createdAt and UpdatedAt timestamps.
+     * Automatically sets createdAt and updatedAt timestamps.
      * 
      * @param sourceNumber The sender's phone number
      * @param destinationNumber The recipient's phone number
