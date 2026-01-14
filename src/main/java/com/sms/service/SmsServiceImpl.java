@@ -2,13 +2,15 @@ package com.sms.service;
 
 import com.sms.dto.SmsRequest;
 import com.sms.dto.SmsResponse;
+import com.sms.exception.InvalidMessageException;
+import com.sms.exception.MessageNotFoundException;
 import com.sms.model.Message;
 import com.sms.repository.MessageRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.Optional;
+import java.util.Optional; 
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +43,10 @@ public class SmsServiceImpl implements SmsService {
     @Override
     @Transactional
     public SmsResponse sendMessage(SmsRequest request) {
+
+        // Business rule validation
+        validateBusinessRules(request);
+
         // 1. Create Message entity from request
         Message message = new Message(
             request.getSourceNumber(),
@@ -59,9 +65,10 @@ public class SmsServiceImpl implements SmsService {
     }
 
     @Override
-    public Optional<SmsResponse> getMessageById(Long id) {
+    public SmsResponse getMessageById(Long id) {
         return messageRepository.findByIdOptional(id)
-            .map(SmsResponse::fromEntity);
+            .map(SmsResponse::fromEntity)
+            .orElseThrow(() -> new MessageNotFoundException(id));
     }
 
     @Override
@@ -92,5 +99,15 @@ public class SmsServiceImpl implements SmsService {
             .stream()
             .map(SmsResponse::fromEntity)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Validates business rules that aren't covered by Bean Validation.
+     */
+    private void validateBusinessRules(SmsRequest request) {
+        // Rule: Source and destination cannot be the same
+        if (request.getSourceNumber().equals(request.getDestinationNumber())) {
+            throw new InvalidMessageException("Source and destination numbers cannot be the same");
+        }
     }
 }

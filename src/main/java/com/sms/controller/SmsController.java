@@ -1,6 +1,5 @@
 package com.sms.controller;
 
-import com.sms.dto.ErrorResponse;
 import com.sms.dto.SmsRequest;
 import com.sms.dto.SmsResponse;
 import com.sms.service.SmsService;
@@ -65,11 +64,8 @@ public class SmsController {
     @GET
     @Path("/{id}")
     public Response getMessageById(@PathParam("id") Long id) {
-        return smsService.getMessageById(id)
-            .map(response -> Response.ok(response).build())
-            .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
-                .entity(new ErrorResponse(404, "Message not found with id: " + id))
-                .build());
+        SmsResponse response = smsService.getMessageById(id);
+        return Response.ok(response).build();
     }
 
     /**

@@ -3,7 +3,6 @@ package com.sms.service;
 import com.sms.dto.SmsRequest;
 import com.sms.dto.SmsResponse;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service interface for SMS operations.
@@ -29,7 +28,7 @@ public interface SmsService {
      * 
      * @param request The SMS request containing source, destination, and content
      * @return SmsResponse with message details and PENDING status
-     * 
+     * @throws com.sms.exception.InvalidMessageException if business validation fails
      */
     SmsResponse sendMessage(SmsRequest request);
 
@@ -37,9 +36,10 @@ public interface SmsService {
      * Get a message by its ID.
      * 
      * @param id the message ID
-     * @return Optional containing SmsResponse if found, empty otherwise
+     * @return SmsResponse with message details
+     * @throws com.sms.exception.MessageNotFoundException if message not found
      */
-    Optional<SmsResponse> getMessageById(Long id);
+    SmsResponse getMessageById(Long id);
 
     /**
      * Get all messages for a specific phone number.
