@@ -1,5 +1,8 @@
 package com.sms.dto;
 
+import com.sms.validation.ValidPhoneNumber;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -9,7 +12,6 @@ import jakarta.validation.constraints.Size;
  * This class contains validation annotations that provide
  * user-friendly error messages when validation fails.
  * 
- * Validation happens automatically when used with @Valid in controller.
  */
 
 public class SmsRequest{
@@ -19,6 +21,7 @@ public class SmsRequest{
      * Must be a valid phone number format.
      */
     @NotBlank(message = "Source number is required")
+    @ValidPhoneNumber
     private String sourceNumber;
 
     /**
@@ -26,6 +29,7 @@ public class SmsRequest{
      * Must be a valid phone number format.
      */
     @NotBlank(message = "Destination number is required")
+    @ValidPhoneNumber
     private String destinationNumber;
 
     /**

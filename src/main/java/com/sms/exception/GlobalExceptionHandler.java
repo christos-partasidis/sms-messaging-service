@@ -9,7 +9,7 @@ import jakarta.ws.rs.ext.Provider;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
+/** 
  * Global exception handler for the application.
  * 
  * Catches exceptions thrown anywhere in the application and converts
