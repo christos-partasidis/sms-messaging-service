@@ -4,13 +4,13 @@ import com.sms.dto.SmsRequest;
 import com.sms.dto.SmsResponse;
 import com.sms.exception.InvalidMessageException;
 import com.sms.exception.MessageNotFoundException;
+import com.sms.messaging.SmsMessageProducer;
 import com.sms.model.Message;
 import com.sms.repository.MessageRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.Optional; 
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 public class SmsServiceImpl implements SmsService {
 
     private final MessageRepository messageRepository;
+    private final SmsMessageProducer messageProducer;
+
 
     /**
      * Constructor injection (preferred over field injection).
@@ -36,8 +38,9 @@ public class SmsServiceImpl implements SmsService {
      * - Ensures object is fully initialized
      */
     @Inject
-    public SmsServiceImpl(MessageRepository messageRepository) {
+    public SmsServiceImpl(MessageRepository messageRepository, SmsMessageProducer messageProducer) {
         this.messageRepository = messageRepository;
+        this.messageProducer = messageProducer;
     }
 
     @Override
@@ -57,8 +60,8 @@ public class SmsServiceImpl implements SmsService {
         // 2. Persist to database
         messageRepository.persist(message);
 
-        // 3. TODO: Send to RabbitMQ for async processing
-        // This will be implemented in the messaging layer
+        // 3. Send to RabbitMQ for async processing
+        messageProducer.sendToQueue(message.id);
 
         // 4. Return response
         return SmsResponse.fromEntity(message);
