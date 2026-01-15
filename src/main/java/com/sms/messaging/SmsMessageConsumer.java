@@ -3,6 +3,7 @@ package com.sms.messaging;
 import com.sms.model.Message;
 import com.sms.repository.MessageRepository;
 import io.smallrye.common.annotation.Blocking;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -44,14 +45,22 @@ public class SmsMessageConsumer {
     @Incoming("sms-incoming")
     @Blocking
     @Transactional
-    public void processMessage(SmsMessageEvent event) {
-        LOG.infof("Received message from queue: %s", event);
+    public void processMessage(JsonObject json) {
+        LOG.infof("Received message from queue: %s", json);
 
+        // Extract messageId from JSON
+        Long messageId = json.getLong("messageId");
+
+        if (messageId == null) {
+            LOG.warn("Received message without messageId, skipping");
+            return;
+        }
+        
         // Find the message in database
-        Message message = messageRepository.findById(event.getMessageId());
+        Message message = messageRepository.findById(messageId);
         
         if (message == null) {
-            LOG.warnf("Message not found in database: messageId=%d", event.getMessageId());
+            LOG.warnf("Message not found in database: messageId=%d", messageId);
             return;
         }
 
