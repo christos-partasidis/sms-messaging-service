@@ -1,8 +1,6 @@
 package com.sms.dto;
 
 import com.sms.validation.ValidPhoneNumber;
-
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
