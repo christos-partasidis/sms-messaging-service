@@ -39,6 +39,29 @@ public class SmsController {
     }
 
     /**
+     * Health check / API info endpoint.
+     * 
+     * GET /api/sms
+     * 
+     * @return API information
+     */
+    @GET
+    public Response getApiInfo() {
+        return Response.ok(java.util.Map.of(
+            "service", "SMS Messaging Service",
+            "version", "1.0.0",
+            "status", "running",
+            "endpoints", java.util.List.of(
+                "POST /api/sms/send - Send a message",
+                "GET /api/sms/{id} - Get message by ID",
+                "GET /api/sms/phone/{phoneNumber} - Get messages for phone",
+                "GET /api/sms/from/{sourceNumber} - Get sent messages",
+                "GET /api/sms/to/{destinationNumber} - Get received messages"
+            )
+        )).build();
+    }
+
+    /**
      * Send a new SMS message.
      * 
      * POST /api/sms/send
