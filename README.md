@@ -15,18 +15,50 @@ This microservice demonstrates:
 
 This project follows a layered architecture pattern, which seperates concerns into distinct layers, each with a specific responsibility.
 
+### Code Organization (Layered Architecture)
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Client    │────►│  Controller │────►│   Service   │────►│ Repository  │
+│   Client    │◄───►│  Controller │────►│   Service   │────►│ Repository  │
 │             │     │             │     │             │     │             │
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-                                              │                    │
-                                              ▼                    ▼
-                                        ┌───────────┐       ┌───────────┐
-                                        │ RabbitMQ  │       │ PostgreSQL│
-                                        └───────────┘       └───────────┘
+                          ▲                   │                    │
+                          │                   ▼                    ▼
+                    ┌───────────┐       ┌───────────┐       ┌───────────┐
+                    │    DTO    │       │ RabbitMQ  │       │ PostgreSQL│
+                    │Req / Resp │       └───────────┘       └───────────┘
+                    └───────────┘
+```
+
+### Message Flow (Runtime)
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          SMS Messaging Service                               │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────┐      ┌────────────┐      ┌────────────┐      ┌────────────┐  │
+│  │ Controller │─────►│  Service   │─────►│  RabbitMQ  │─────►│  Consumer  │  │
+│  │   (REST)   │      │(Validate & │      │  (Queue)   │      │ (Simulate  │  │
+│  │            │      │   Save)    │      │            │      │  Delivery) │  │
+│  └─────┬──────┘      └─────┬──────┘      └────────────┘      └─────┬──────┘  │
+│        │                   │                                       │         │
+│        ▼                   ▼                                       ▼         │
+│  ┌────────────┐      ┌────────────┐                          ┌────────────┐  │
+│  │    DTO     │      │ PostgreSQL │◄─────────────────────────│   Update   │  │
+│  │ Request /  │      │ (Messages) │                          │   Status   │  │
+│  │ Response   │      │            │                          │            │  │
+│  └────────────┘      └────────────┘                          └────────────┘  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 https://excalidraw.com/#room=2a1f462bf288e463efcd,UkvLz_ITVqqpJYjKDl_x8w
+
+### API Endpoints
+Method      - Endpoint                           - Description
+1) `POST`   - `/api/sms/send`                    - Send a new SMS message
+2) `GET`    - `/api/sms/{id}`                    - Get message by ID
+3) `GET`    - `/api/sms/phone/{phoneNumber}`     - Get all messages for a phone number
+4) `GET`    - `/api/sms/from/{sourceNumber}`     - Get all mesages sent from a number
+5) `GET`    - `/api/sms/to/{destinationNumber}`  - Get messages sent to a number
 
 ## How It Works
 
@@ -45,8 +77,9 @@ Layer             - Package            - Responsibility
 3) Service        - com.sms.service    - Business logic, validation orchestration
 4) Repository     - com.sms.repository - Database operations
 5) Model          - com.sms.model      - Database Entities
-6) Validation     - com.sms.validation - Custom validators
-7) Exception      - com.sms.exception  - Error handling
+6) Messaging      - com.sms.messaging  - RabbitMQ producer/consumer
+7) Validation     - com.sms.validation - Custom validators
+8) Exception      - com.sms.exception  - Error handling
 
 ## Technology Stack
 
@@ -98,14 +131,6 @@ Technology                 - Version               - Purpose
 - Swagger UI               : http://localhost:8080/q/swagger-ui 
 - RabbitMQ Management      : http://localhost:15672 (guest/guest)
 
-### API Endpoints
-Method      - Endpoint                           - Description
-1) `POST`   - `/api/sms/send`                    - Send a new SMS message
-2) `GET`    - `/api/sms/{id}`                    - Get message by ID
-3) `GET`    - `/api/sms/phone/{phoneNumber}`     - Get all messages for a phone number
-4) `GET`    - `/api/sms/from/{sourceNumber}`     - Get all mesages sent from a number
-5) `GET`    - `/api/sms/to/{destinationNumber}`  - Get messages sent to a number
-
 ### Example Usage
 1. **Send a message**
 ```bash
@@ -123,44 +148,54 @@ curl -X POST http://localhost:8080/api/sms/send \
 curl http://localhost:8080/api/sms/1
 ```
 
-### Building a Native Executable
+## Building for Production
+
+### Package as JAR
+
+```bash
+./mvnw package -DskipTests
+```
+
+This produces `quarkus-run.jar` in `target/quarkus-app/` directory.
+
+**Run the packaged application:**
+```bash
+java -jar target/quarkus-app/quarkus-run.jar
+```
+
+### Build über-jar (Single JAR with all dependencies)
+
+```bash
+./mvnw package -Dquarkus.package.jar.type=uber-jar -DskipTests
+```
+
+**Run:**
+```bash
+java -jar target/sms-messaging-service-1.0.0-SNAPSHOT-runner.jar
+```
+
+### Build Native Executable (Optional)
+
 **With GraalVM installed:**
 ```bash
-./mvnw package -Dnative
+./mvnw package -Dnative -DskipTests
 ./target/sms-messaging-service-1.0.0-SNAPSHOT-runner
 ```
 
 **Without GraalVM (using Docker):**
 ```bash
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+./mvnw package -Dnative -Dquarkus.native.container-build=true -DskipTests
 ./target/sms-messaging-service-1.0.0-SNAPSHOT-runner
 ```
 
-## Testing
-```bash
-# Run all tests
-./mvnw test
-```
-
-## Package and run
-```shell script
-./mvnw package
-```
-
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
 ## Design Decisions
+
+### Why Microservice Architecture?
+
+- **Single Responsibility**: Service does one thing - SMS messaging
+- **Independent Deployment**: Can be updated without affecting other services
+- **Scalability**: Can scale SMS processing independently
+- **Technology Freedom**: Could be rewritten in different language if needed
 
 ### Why RabbitMQ over Kafka?
 
